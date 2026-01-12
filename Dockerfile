@@ -8,6 +8,10 @@ RUN apt-get update && apt-get install -y \
     g++ \
     && rm -rf /var/lib/apt/lists/*
 
+LABEL org.opencontainers.image.source=https://github.com/xorinf/Aw-man
+LABEL org.opencontainers.image.description="SENTINEL - Autonomous AI Cyber Defense Platform"
+LABEL org.opencontainers.image.licenses="MIT"
+
 # Install Python dependencies
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
