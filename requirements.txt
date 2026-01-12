@@ -1,0 +1,44 @@
+# Core dependencies
+numpy>=1.24.0
+pandas>=2.0.0
+scikit-learn>=1.3.0
+
+# Deep Learning
+torch>=2.0.0
+pytorch-lightning>=2.0.0
+torch-geometric>=2.3.0
+
+# Explainable AI
+shap>=0.42.0
+captum>=0.6.0
+lime>=0.2.0
+
+# API & Web
+fastapi>=0.100.0
+uvicorn>=0.23.0
+pydantic>=2.0.0
+
+# Data Pipeline
+kafka-python>=2.0.0
+redis>=4.5.0
+zeep>=4.2.0
+
+# NLP & Agents
+langchain>=0.1.0
+openai>=1.0.0
+
+# Visualization
+matplotlib>=3.7.0
+seaborn>=0.12.0
+plotly>=5.15.0
+
+# Utilities
+python-dotenv>=1.0.0
+loguru>=0.7.0
+tqdm>=4.65.0
+pyyaml>=6.0
+
+# Testing
+pytest>=7.4.0
+pytest-asyncio>=0.21.0
+httpx>=0.24.0
