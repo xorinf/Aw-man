@@ -2,6 +2,20 @@
 Anomaly Detection Models - VAE and Isolation Forest
 """
 import numpy as np
+"""
+SENTINEL Anomaly Detection Module
+=================================
+
+Implements hybrid unsupervised learning for zero-day threat detection.
+Combines Variational Autoencoders (VAE) with Isolation Forests.
+
+Models:
+    VariationalAutoEncoder: Deep generative model for reconstruction error
+    HybridAnomalyDetector: Ensemble of VAE and Isolation Forest
+
+Author: xorinf
+Version: 1.0.0
+"""
 import torch
 import torch.nn as nn
 from torch.utils.data import DataLoader, TensorDataset

@@ -1,6 +1,22 @@
 """
 SENTINEL API - FastAPI endpoints for threat detection
 """
+"""
+SENTINEL API Gateway
+====================
+
+FastAPI application serving the core platform functionality.
+Exposes endpoints for analysis, simulation, and health monitoring.
+
+Endpoints:
+    /analyze: Threat detection on network flows
+    /simulate-attack: Generate adversarial traffic
+    /mitre-coverage: Reporting
+    /health: System status
+
+Author: xorinf
+Version: 1.0.0
+"""
 from fastapi import FastAPI, HTTPException, BackgroundTasks
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel

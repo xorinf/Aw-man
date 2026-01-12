@@ -2,6 +2,20 @@
 AI Red Team - LLM-powered Attacker Simulation
 Multi-agent attack generation for adversarial training
 """
+"""
+SENTINEL AI Red Team Module
+===========================
+
+Simulates cyber attacks for training and validation.
+Implements different attacker personas with distinct behaviors.
+
+Personas:
+    APTAgent: Stealthy, slow, goal-oriented (e.g., APT29)
+    OpportunisticAgent: Noisy, fast, brute-force (e.g., Script Kiddie)
+
+Author: xorinf
+Version: 1.0.0
+"""
 import random
 import numpy as np
 from typing import List, Dict, Any, Optional, Generator

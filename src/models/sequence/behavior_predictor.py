@@ -2,6 +2,21 @@
 Sequence Models for Attack Behavior Prediction
 LSTM and Transformer architectures for predicting attacker actions
 """
+"""
+SENTINEL Behavior Prediction Module
+===================================
+
+Predicts future attacker actions based on observed sequences.
+Maps low-level events to MITRE ATT&CK kill chain stages.
+
+Models:
+    AttackLSTM: LSTM with Attention mechanism
+    AttackTransformer: Transformer-based sequence predictor
+    BehaviorPredictor: High-level wrapper for inference
+
+Author: xorinf
+Version: 1.0.0
+"""
 import torch
 import torch.nn as nn
 import numpy as np

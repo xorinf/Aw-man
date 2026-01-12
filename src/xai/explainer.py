@@ -9,7 +9,23 @@ import json
 from loguru import logger
 
 try:
-    import shap
+    """
+SENTINEL Explainable AI (XAI) Module
+====================================
+
+Generates human-readable explanations for AI alerts.
+Uses SHAP (Shapley Additive Explanations) and Counterfactuals.
+
+Classes:
+    ThreatExplanation: Dataclass for alert details
+    SHAPExplainer: Feature importance analysis
+    CounterfactualGenerator: "What if" analysis
+    ThreatExplainerPipeline: Unified explanation pipeline
+
+Author: xorinf
+Version: 1.0.0
+"""
+import shap
     SHAP_AVAILABLE = True
 except ImportError:
     SHAP_AVAILABLE = False

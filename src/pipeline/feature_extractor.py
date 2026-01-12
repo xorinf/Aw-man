@@ -1,6 +1,23 @@
 """
 Feature Extraction Pipeline for Network Traffic and System Logs
 """
+"""
+SENTINEL Feature Extraction Pipeline
+====================================
+
+Extracts security features from network flows and system logs.
+Handles data normalization, feature engineering, and sequence building
+for downstream AI models.
+
+Classes:
+    NetworkFlow: Dataclass for raw network traffic
+    FeatureExtractor: Base abstract class
+    NetworkFeatureExtractor: Extracts 13+ features from flows
+    SequenceBuilder: Creates temporal sequences for LSTM/Transformers
+
+Author: xorinf
+Version: 1.0.0
+"""
 import numpy as np
 import pandas as pd
 from typing import Dict, List, Any, Optional
