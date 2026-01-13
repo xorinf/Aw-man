@@ -17,12 +17,14 @@ Endpoints:
 Author: xorinf
 Version: 1.0.0
 """
-from fastapi import FastAPI, HTTPException, BackgroundTasks
+from fastapi import FastAPI, HTTPException, BackgroundTasks, WebSocket, WebSocketDisconnect
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
-from typing import List, Optional, Dict, Any
+from typing import List, Optional, Dict, Any, Set
 from datetime import datetime
 import numpy as np
+import asyncio
+import json
 from loguru import logger
 
 # App instance
@@ -87,6 +89,16 @@ class AnalysisResponse(BaseModel):
     summary: Dict[str, Any]
 
 
+class ChatMessage(BaseModel):
+    message: str
+    context: Optional[Dict[str, Any]] = None
+
+
+class ChatResponse(BaseModel):
+    response: str
+    suggestions: List[str]
+
+
 # ============= State =============
 
 class AppState:
@@ -97,6 +109,39 @@ class AppState:
     models_loaded = False
 
 state = AppState()
+
+
+# ============= WebSocket Manager =============
+
+class ConnectionManager:
+    """Manage WebSocket connections for real-time alerts"""
+    def __init__(self):
+        self.active_connections: Set[WebSocket] = set()
+
+    async def connect(self, websocket: WebSocket):
+        await websocket.accept()
+        self.active_connections.add(websocket)
+        logger.info(f"WebSocket client connected. Total: {len(self.active_connections)}")
+
+    def disconnect(self, websocket: WebSocket):
+        self.active_connections.discard(websocket)
+        logger.info(f"WebSocket client disconnected. Total: {len(self.active_connections)}")
+
+    async def broadcast(self, message: dict):
+        """Broadcast alert to all connected clients"""
+        disconnected = set()
+        for connection in self.active_connections:
+            try:
+                await connection.send_json(message)
+            except Exception as e:
+                logger.error(f"Error sending to client: {e}")
+                disconnected.add(connection)
+        
+        # Clean up disconnected clients
+        for conn in disconnected:
+            self.disconnect(conn)
+
+manager = ConnectionManager()
 
 
 # ============= Endpoints =============
@@ -132,7 +177,7 @@ async def analyze_traffic(request: AnalysisRequest):
             alert = _create_alert(flow, result)
             alerts.append(alert)
     
-    return AnalysisResponse(
+    response = AnalysisResponse(
         analyzed_count=len(request.flows),
         alerts=alerts,
         summary={
@@ -142,6 +187,16 @@ async def analyze_traffic(request: AnalysisRequest):
             "high": len([a for a in alerts if a.verdict == "HIGH"]),
         }
     )
+    
+    # Broadcast alerts via WebSocket
+    for alert in alerts:
+        await manager.broadcast({
+            "type": "alert",
+            "data": alert.model_dump(),
+            "timestamp": datetime.utcnow().isoformat()
+        })
+    
+    return response
 
 
 @app.post("/simulate-attack")
@@ -187,6 +242,141 @@ async def get_mitre_coverage():
         "covered_techniques": 45,
         "detection_rate": 0.72
     }
+
+
+@app.get("/mitre/technique/{technique_id}")
+async def get_technique_details(technique_id: str):
+    """Get MITRE ATT&CK technique details"""
+    # Mock data - in production, load from MITRE ATT&CK database
+    techniques = {
+        "T1595": {
+            "name": "Active Scanning",
+            "tactic": "Reconnaissance",
+            "description": "Adversaries may execute active reconnaissance scans to gather information.",
+            "mitigations": ["Network Intrusion Prevention", "Pre-compromise"]
+        },
+        "T1566": {
+            "name": "Phishing",
+            "tactic": "Initial Access",
+            "description": "Adversaries may send phishing messages to gain access to victim systems.",
+            "mitigations": ["User Training", "Email Gateway Filtering"]
+        },
+        "T1059": {
+            "name": "Command and Scripting Interpreter",
+            "tactic": "Execution",
+            "description": "Adversaries may abuse command and script interpreters to execute commands.",
+            "mitigations": ["Execution Prevention", "Privileged Account Management"]
+        }
+    }
+    
+    if technique_id not in techniques:
+        raise HTTPException(status_code=404, detail="Technique not found")
+    
+    return techniques[technique_id]
+
+
+@app.get("/attack-graph")
+async def get_attack_graph():
+    """Get attack graph data for visualization"""
+    # Mock attack graph - in production, build from real alert correlations
+    return {
+        "nodes": [
+            {"id": "192.168.1.100", "label": "192.168.1.100", "type": "host", "compromised": True},
+            {"id": "192.168.1.50", "label": "192.168.1.50", "type": "host", "compromised": True},
+            {"id": "10.0.0.5", "label": "10.0.0.5", "type": "host", "compromised": False},
+            {"id": "T1059", "label": "Command Execution", "type": "technique"},
+            {"id": "T1021", "label": "Remote Services", "type": "technique"},
+        ],
+        "edges": [
+            {"source": "192.168.1.100", "target": "T1059", "label": "executes"},
+            {"source": "T1059", "target": "192.168.1.50", "label": "targets"},
+            {"source": "192.168.1.50", "target": "T1021", "label": "uses"},
+            {"source": "T1021", "target": "10.0.0.5", "label": "attempts"},
+        ]
+    }
+
+
+@app.post("/chat", response_model=ChatResponse)
+async def chat_copilot(message: ChatMessage):
+    """AI Security Copilot chat endpoint"""
+    user_msg = message.message.lower()
+    
+    # Simple rule-based responses - in production, use LLM
+    if "alert" in user_msg or "threat" in user_msg:
+        response = """Based on recent alerts, I've detected:
+        
+• **3 high-severity threats** in the past hour
+• Primary concern: Potential lateral movement from 192.168.1.100
+• Affected hosts: 192.168.1.50, 192.168.1.75
+
+**Recommended Actions:**
+1. Isolate host 192.168.1.100 from the network
+2. Investigate processes running on compromised hosts
+3. Review authentication logs for unauthorized access
+
+Would you like me to generate a detailed incident report?"""
+        suggestions = ["Show attack timeline", "Block source IP", "Generate report"]
+    
+    elif "mitre" in user_msg or "attack" in user_msg:
+        response = """**MITRE ATT&CK Coverage Analysis:**
+
+Detected techniques in recent activity:
+• T1059 - Command and Scripting Interpreter
+• T1021 - Remote Services  
+• T1078 - Valid Accounts
+
+These align with **Lateral Movement** and **Execution** tactics.
+
+Coverage: 45 techniques across 12 tactics (Detection rate: 72%)"""
+        suggestions = ["Show coverage heatmap", "View technique details", "Simulate APT attack"]
+    
+    else:
+        response = """Hello! I'm your AI Security Copilot. I can help you:
+
+• Analyze threats and alerts
+• Explain detection decisions
+• Recommend response actions
+• Map attacks to MITRE ATT&CK
+• Simulate adversary behavior
+
+What would you like to investigate?"""
+        suggestions = ["Show latest alerts", "Explain last detection", "Run attack simulation"]
+    
+    return ChatResponse(
+        response=response,
+        suggestions=suggestions
+    )
+
+
+@app.websocket("/ws/alerts")
+async def websocket_alerts(websocket: WebSocket):
+    """WebSocket endpoint for real-time alert streaming"""
+    await manager.connect(websocket)
+    
+    try:
+        # Send initial connection message
+        await websocket.send_json({
+            "type": "connection",
+            "message": "Connected to SENTINEL alert stream",
+            "timestamp": datetime.utcnow().isoformat()
+        })
+        
+        # Keep connection alive and listen for client messages
+        while True:
+            try:
+                # Wait for any client messages (heartbeat, commands, etc.)
+                data = await asyncio.wait_for(websocket.receive_text(), timeout=30.0)
+                # Echo back for heartbeat
+                await websocket.send_json({"type": "pong", "timestamp": datetime.utcnow().isoformat()})
+            except asyncio.TimeoutError:
+                # Send periodic heartbeat
+                await websocket.send_json({"type": "heartbeat", "timestamp": datetime.utcnow().isoformat()})
+                
+    except WebSocketDisconnect:
+        manager.disconnect(websocket)
+    except Exception as e:
+        logger.error(f"WebSocket error: {e}")
+        manager.disconnect(websocket)
 
 
 # ============= Helpers =============

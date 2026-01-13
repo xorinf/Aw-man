@@ -32,7 +32,7 @@
 | 🟢 XAI Explainer | **Complete** | SHAP, counterfactuals, attention |
 | 🟢 Red Team Simulation | **Complete** | APT29 & Opportunistic agents |
 | 🟡 Model Training | **Pending** | Requires dataset integration |
-| 🟡 React Dashboard | **Pending** | UI for visualization |
+| 🟢 React Dashboard | **Complete** | Real-time UI with WebSocket alerts |
 | 🔴 Production Deploy | **Not Started** | Kubernetes deployment |
 
 ---
@@ -112,14 +112,21 @@ pip install -r requirements.txt
 
 # Run the API server
 python -m uvicorn src.api.main:app --host 0.0.0.0 --port 8000 --reload
+
+# Run the Dashboard (in a separate terminal)
+cd dashboard
+npm install
+npm run dev
 ```
 
 ### Access Points
 | Service | URL |
 |---------|-----|
+| 🎨 Dashboard | http://localhost:3000 |
 | 📚 Swagger Docs | http://localhost:8000/docs |
 | 💚 Health Check | http://localhost:8000/health |
 | 🎯 OpenAPI Schema | http://localhost:8000/openapi.json |
+| 🔌 WebSocket | ws://localhost:8000/ws/alerts |
 
 ---
 
@@ -131,6 +138,10 @@ python -m uvicorn src.api.main:app --host 0.0.0.0 --port 8000 --reload
 | `/analyze` | POST | Analyze network flows for threats |
 | `/simulate-attack` | POST | Generate simulated attack traffic (APT, Opportunistic) |
 | `/mitre-coverage` | GET | Get MITRE ATT&CK coverage statistics |
+| `/attack-graph` | GET | Get attack graph visualization data |
+| `/mitre/technique/{id}` | GET | Get MITRE technique details |
+| `/chat` | POST | AI Security Copilot conversation |
+| `/ws/alerts` | WebSocket | Real-time alert streaming |
 
 ### Example: Simulate an APT Attack
 ```bash
